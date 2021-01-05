@@ -1,0 +1,27 @@
+{
+  "name": "project_v2",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^5.11.0",
+    "webpack-cli": "^4.3.0"
+  },
+  "dependencies": {
+    "assert": "^2.0.0",
+    "folktale": "^2.3.2",
+    "https-browserify": "^1.0.0",
+    "jsdom": "^16.4.0",
+    "node-fetch": "^2.6.1",
+    "stream-http": "^3.1.1",
+    "util": "^0.12.3",
+    "webpack-node-externals": "^2.5.2"
+  }
+}
