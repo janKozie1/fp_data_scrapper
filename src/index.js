@@ -1,4 +1,5 @@
 import { Right } from "./Either";
+import { Identity } from "./Identity";
 import { Maybe } from "./Maybe";
 
 import {
@@ -32,6 +33,13 @@ import {
   append,
   not,
   isNothing,
+  ap,
+  ap_r,
+  set,
+  replace,
+  range,
+  map_r,
+  run,
 } from "./utils";
 
 const getDocument = flow(
@@ -53,8 +61,13 @@ const isAnchorToSubpage = (root) => flow(
   flipBool  
 );
 
+const prepareUrl = (separators) => (values) => flow(
+  replace(separators.category)(values.category),
+  replace(separators.page)(values.page)
+)
 
-const program = (config) => getURL(config.baseUrl)
+
+const getProductPageLinks = ({url, productSelector}) => getURL(url)
   .chain(extractHTML)
   .map(
     flow(
@@ -62,15 +75,19 @@ const program = (config) => getURL(config.baseUrl)
       getDocument,
       chain(
         flow(
-          querySelectorAll(config.selectors.product),
+          querySelectorAll(productSelector),
           toArray,
-          filter(isAnchorToSubpage(config.baseUrl)),
+          filter(isAnchorToSubpage(url)),
           map(flow(
             prop("href"),
             chain(flow(
               startsWith('/'),
               either(
-                (relativeLink) => origin(config.baseUrl).map(append(relativeLink)),
+                flow(
+                  append,
+                  Identity.of,
+                  ap_r(origin(url)),
+                ),
                 Maybe.of
               ),
             ))
@@ -79,9 +96,29 @@ const program = (config) => getURL(config.baseUrl)
           map(value)
         )
       ),
-      debug(id),
+      debug(id)
     )
   );
+
+
+const generatePageLink = ({ categories, separators, url }) => flow(
+    set('page'),
+    merge,
+    map_r(categories.map(set('category'))),
+    map(flow(
+      prepareUrl(separators),
+      map_r(Identity.of(url)),
+      value
+    ))
+  );
+
+const program = (config) => range(config.pages.from)(config.pages.to)
+  .flatMap(generatePageLink(config))
+  .map(flow(
+    set('url'),
+    merge({productSelector: config.selectors.product}),
+    getProductPageLinks
+  ))
 
 
 const defaultConfig = {
@@ -96,16 +133,16 @@ const defaultConfig = {
   baseUrl: undefined
 }
 
-const config = {
+const pageConfig = {
   selectors: {
     product: 'p > .productLink',
   },
-  baseUrl: "https://www.morele.net/kategoria/laptopy-31/,,,,,,,,0,,,,/1/",
-  categories: [],
-}
+  url: "https://www.morele.net/{{category}}/,,,,,,,,0,,,,/{{page}}/",
+  categories: ['laptopy-31'],
+  pages: { from: 1, to: 10 },
+};
 
-// IMPURE
+// IMPURE CALLING CODE
 
+program(merge(defaultConfig)(pageConfig)).forEach(run)
 
-
-program(merge(defaultConfig)(config)).run()

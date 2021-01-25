@@ -100,6 +100,33 @@ class Left {
   }
 }
 
+;// CONCATENATED MODULE: ./src/Identity.js
+class Identity {
+    constructor(x) {
+        this.__value = x;
+    }
+
+    static of(x) {
+        return new Identity(x);
+    }
+
+    map(fn) {
+        return Identity.of(fn(this.__value));
+    }
+
+    ap(f) {
+        return f.map(this.__value);
+    }
+
+    chain(fn) {
+        return this.map(fn).join();
+    }
+
+    join() {
+        return this.__value;
+    }
+
+}
 ;// CONCATENATED MODULE: ./src/Maybe.js
 class Maybe_Maybe {
   constructor(value) {
@@ -137,6 +164,8 @@ class Maybe_Maybe {
 const prop = (name) => (object) => Maybe_Maybe.of(object[name]);
 
 const merge = (objA) => (objB) => Object.assign({}, objA, objB);
+
+const set = (name) => (value) => ({ [name]: value })
 ;// CONCATENATED MODULE: ./src/utils/array.js
 
 
@@ -159,6 +188,8 @@ const reverse = (arr) => arr.reverse();
 
 const joinArr = (str) => (arr) => arr.join(str);
 
+const range = (from) => (to) => Array.from({length: to - from}, (_, index) => index + from)
+
 ;// CONCATENATED MODULE: ./src/utils/fp.js
 
 
@@ -172,10 +203,18 @@ const compose = (...fns) => fp_flow(fns.reverse());
 const left = (value) => new Left(value);
 
 const map = (fn) => (functor) => functor.map(fn);
+const map_r = (functor) => (fn) => functor.map(fn);
+
+const ap = (functorA) => (functorB) => functorA.ap(functorB)
+const ap_r = (functorA) => (functorB) => functorB.ap(functorA)
 
 const join = (monad) => monad.join();
 
-const chain = (fn) => (monad) => monad.chain(fn);
+const chain = (fn) => (monad) => Array.isArray(monad) 
+  ? monad.flatMap(fn)
+  : monad.chain(fn);
+
+const call = (arg) => (fn) => fn(arg)
 
 const isLeft = (either) => either.isLeft();
 
@@ -183,6 +222,8 @@ const either = (right, left = id) => (either) =>
   either.isLeft() ? left(either.__value) : right(either.__value);
 
 const wrap = (value) => () => value;
+
+const run = (task) => task.run()
 
 const value = (func) => func.__value;
 
@@ -192,6 +233,8 @@ const debug = (fn) => (value) => {
   console.log(fn(value));
   return value;
 };
+
+
 
 const __stop = () => {
   throw new Error();
@@ -325,6 +368,8 @@ const append = (suffix) => (str) => str + suffix;
 
 const prepend = (prefix) => (str) => prefix + str;
 
+const replace = (regex) => (replacement) => (str) => str.replace(regex, replacement)
+
 const matches = (regex) => (str) =>
   regex.test(str) ? Right.of(str) : left(str);
 
@@ -364,6 +409,7 @@ const origin = fp_flow(
 
 
 
+
 const getDocument = fp_flow(
   prop("window"),
   chain(prop("document")
@@ -383,8 +429,13 @@ const isAnchorToSubpage = (root) => fp_flow(
   flipBool  
 );
 
+const prepareUrl = (separators) => (values) => fp_flow(
+  replace(separators.category)(values.category),
+  replace(separators.page)(values.page)
+)
 
-const program = (config) => getURL(config.baseUrl)
+
+const getProductPageLinks = ({url, productSelector}) => getURL(url)
   .chain(extractHTML)
   .map(
     fp_flow(
@@ -392,15 +443,19 @@ const program = (config) => getURL(config.baseUrl)
       getDocument,
       chain(
         fp_flow(
-          querySelectorAll(config.selectors.product),
+          querySelectorAll(productSelector),
           toArray,
-          filter(isAnchorToSubpage(config.baseUrl)),
+          filter(isAnchorToSubpage(url)),
           map(fp_flow(
             prop("href"),
             chain(fp_flow(
               startsWith('/'),
               either(
-                (relativeLink) => origin(config.baseUrl).map(append(relativeLink)),
+                fp_flow(
+                  append,
+                  Identity.of,
+                  ap_r(origin(url)),
+                ),
                 Maybe_Maybe.of
               ),
             ))
@@ -409,9 +464,29 @@ const program = (config) => getURL(config.baseUrl)
           map(value)
         )
       ),
-      debug(id),
+      debug(id)
     )
   );
+
+
+const generatePageLink = ({ categories, separators, url }) => fp_flow(
+    set('page'),
+    merge,
+    map_r(categories.map(set('category'))),
+    map(fp_flow(
+      prepareUrl(separators),
+      map_r(Identity.of(url)),
+      value
+    ))
+  );
+
+const program = (config) => range(config.pages.from)(config.pages.to)
+  .flatMap(generatePageLink(config))
+  .map(fp_flow(
+    set('url'),
+    merge({productSelector: config.selectors.product}),
+    getProductPageLinks
+  ))
 
 
 const defaultConfig = {
@@ -426,19 +501,19 @@ const defaultConfig = {
   baseUrl: undefined
 }
 
-const config = {
+const pageConfig = {
   selectors: {
     product: 'p > .productLink',
   },
-  baseUrl: "https://www.morele.net/kategoria/laptopy-31/,,,,,,,,0,,,,/1/",
-  categories: [],
-}
+  url: "https://www.morele.net/{{category}}/,,,,,,,,0,,,,/{{page}}/",
+  categories: ['laptopy-31'],
+  pages: { from: 1, to: 10 },
+};
 
-// IMPURE
+// IMPURE CALLING CODE
 
+program(merge(defaultConfig)(pageConfig)).forEach(run)
 
-
-program(merge(defaultConfig)(config)).run()
 
 /******/ })()
 ;

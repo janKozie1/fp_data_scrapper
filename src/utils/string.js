@@ -20,6 +20,8 @@ export const append = (suffix) => (str) => str + suffix;
 
 export const prepend = (prefix) => (str) => prefix + str;
 
+export const replace = (regex) => (replacement) => (str) => str.replace(regex, replacement)
+
 export const matches = (regex) => (str) =>
   regex.test(str) ? Right.of(str) : left(str);
 

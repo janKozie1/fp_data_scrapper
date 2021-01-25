@@ -18,3 +18,5 @@ export const toArray = (arg) => Array.from(arg);
 export const reverse = (arr) => arr.reverse();
 
 export const joinArr = (str) => (arr) => arr.join(str);
+
+export const range = (from) => (to) => Array.from({length: to - from}, (_, index) => index + from)
