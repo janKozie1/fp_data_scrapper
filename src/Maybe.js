@@ -1,10 +1,9 @@
-
 export class Maybe {
   constructor(value) {
     this.__value = value;
   }
 
-  isNothing() { 
+  isNothing() {
     return this.__value === undefined || this.__value === null;
   }
 
@@ -25,6 +24,6 @@ export class Maybe {
   }
 
   join() {
-    return this.__value;
+    return this.isNothing() ? this : this.__value;
   }
 }

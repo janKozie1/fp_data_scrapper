@@ -1,7 +1,7 @@
-import { Maybe } from '../Maybe';
-import { flow } from './fp';
-import { prop } from './object';
-import { not } from './boolean';
+import { Maybe } from "../Maybe";
+import { flow } from "./fp";
+import { prop } from "./object";
+import { not } from "./boolean";
 
 export const first = prop(0);
 
@@ -14,3 +14,7 @@ export const filter = (fn) => (arr) => arr.filter(fn);
 export const pick = (fn) => (arr) => arr.filter(flow(fn, not));
 
 export const toArray = (arg) => Array.from(arg);
+
+export const reverse = (arr) => arr.reverse();
+
+export const joinArr = (str) => (arr) => arr.join(str);

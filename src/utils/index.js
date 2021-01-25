@@ -5,3 +5,4 @@ export * from './fetching';
 export * from './fp';
 export * from './object';
 export * from './string';
+export * from './url';

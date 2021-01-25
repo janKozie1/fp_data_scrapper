@@ -1,4 +1,7 @@
-import { 
+import { Right } from "./Either";
+import { Maybe } from "./Maybe";
+
+import {
   getURL,
   extractHTML,
   domFromHTML,
@@ -6,48 +9,103 @@ import {
   debug,
   flow,
   id,
+  left,
   prop,
-  not,
   map,
   chain,
   toArray,
   filter,
   contains,
   getAttribute,
-  isNothing,
+  __stop,
+  matches,
   value,
-  toBool
-} from './utils';
+  toBool,
+  either,
+  startsWith,
+  isLeft,
+  flipBool,
+  merge,
+  toUrl,
+  origin,
+  prepend,
+  append,
+  not,
+  isNothing,
+} from "./utils";
 
 const getDocument = flow(
-  prop('window'),
-  chain(prop('document')),
-)
+  prop("window"),
+  chain(prop("document")
+  )
+);
 
 const isAnchorToSubpage = (root) => flow(
-  getAttribute('href'),
-  chain(contains(/^(https?)/)),
-  chain(contains(root)),
-  debug(id),
+  getAttribute("href"),
+  map(
+    flow(
+      startsWith(root), 
+      either(Right.of, startsWith("/")),
+      isLeft,
+    )
+  ),
   value,
-  toBool
-)
+  flipBool  
+);
 
 
-
-getURL('https://www.empik.com')
+const program = (config) => getURL(config.baseUrl)
   .chain(extractHTML)
-  .map(flow(
-    domFromHTML,
-    getDocument,
-    map(flow(
-      querySelectorAll('a'),
-      toArray,
-      filter(isAnchorToSubpage('https://www.empik.com')),
-      map(flow(
-        prop('href'),
-        debug(id)
-      ))
-    ))
-  ))
-  .run()
+  .map(
+    flow(
+      domFromHTML,
+      getDocument,
+      chain(
+        flow(
+          querySelectorAll(config.selectors.product),
+          toArray,
+          filter(isAnchorToSubpage(config.baseUrl)),
+          map(flow(
+            prop("href"),
+            chain(flow(
+              startsWith('/'),
+              either(
+                (relativeLink) => origin(config.baseUrl).map(append(relativeLink)),
+                Maybe.of
+              ),
+            ))
+          )),
+          filter(not(isNothing)),
+          map(value)
+        )
+      ),
+      debug(id),
+    )
+  );
+
+
+const defaultConfig = {
+  separators: {
+    category: '{{category}}',
+    page: '{{page}}',
+  },
+  selectors: {
+    product: undefined
+  },
+  categories: [],
+  baseUrl: undefined
+}
+
+const config = {
+  selectors: {
+    product: 'p > .productLink',
+  },
+  baseUrl: "https://www.morele.net/kategoria/laptopy-31/,,,,,,,,0,,,,/1/",
+  categories: [],
+}
+
+// IMPURE
+
+
+
+program(merge(defaultConfig)(config)).run()
