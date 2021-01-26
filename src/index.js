@@ -40,6 +40,9 @@ import {
   range,
   map_r,
   run,
+  unary,
+  chunk,
+  isEmpty
 } from "./utils";
 
 const getDocument = flow(
@@ -100,6 +103,7 @@ const getProductPageLinks = ({url, productSelector}) => getURL(url)
     )
   );
 
+console.log(chunk(1)([1,2,3,4,5,6,7]))
 
 const generatePageLink = ({ categories, separators, url }) => flow(
     set('page'),
@@ -144,5 +148,5 @@ const pageConfig = {
 
 // IMPURE CALLING CODE
 
-program(merge(defaultConfig)(pageConfig)).forEach(run)
+program(merge(defaultConfig)(pageConfig)).forEach(unary(console.log))
 

@@ -158,39 +158,29 @@ class Maybe_Maybe {
   }
 }
 
-;// CONCATENATED MODULE: ./src/utils/object.js
+;// CONCATENATED MODULE: ./src/utils/boolean.js
 
 
-const prop = (name) => (object) => Maybe_Maybe.of(object[name]);
+const flipBool = (bool) => !bool;
 
-const merge = (objA) => (objB) => Object.assign({}, objA, objB);
+const boolean_not = (fn) => fp_flow(fn, toBool, flipBool);
 
-const set = (name) => (value) => ({ [name]: value })
-;// CONCATENATED MODULE: ./src/utils/array.js
+const or = (fnA, fnB) => (arg) => toBool(fnA(arg) || fnB(arg));
 
+const and = (fnA, fnB) => (arg) => toBool(fnA(arg) && fnB(arg));
 
+const ifElse = (fnA, fnB) => (arg) => arg ? fnA() : fnB()
 
+const eq = (a) => (b) => a === b;
 
+const boolean_isLess = (a) => (b) => a < b;
 
-const array_first = prop(0);
-
-const last = (arr) => Maybe.of(arr[arr.length - 1]);
-
-const find = (fn) => (arr) => Maybe.of(arr.find(fn));
-
-const filter = (fn) => (arr) => arr.filter(fn);
-
-const pick = (fn) => (arr) => arr.filter(flow(fn, not));
-
-const toArray = (arg) => Array.from(arg);
-
-const reverse = (arr) => arr.reverse();
-
-const joinArr = (str) => (arr) => arr.join(str);
-
-const range = (from) => (to) => Array.from({length: to - from}, (_, index) => index + from)
+const toBool = Boolean;
 
 ;// CONCATENATED MODULE: ./src/utils/fp.js
+
+
+
 
 
 const id = (value) => value;
@@ -214,7 +204,7 @@ const chain = (fn) => (monad) => Array.isArray(monad)
   ? monad.flatMap(fn)
   : monad.chain(fn);
 
-const call = (arg) => (fn) => fn(arg)
+const call = (...args) => (fn) => fn(...args)
 
 const isLeft = (either) => either.isLeft();
 
@@ -227,6 +217,16 @@ const run = (task) => task.run()
 
 const value = (func) => func.__value;
 
+const unary = (fn) => (arg) => fn(arg);
+
+const apply = (fn) => (args) => fn.apply(null, args)
+
+const curry = (fn) => (...args) => fp_flow(
+  prop('length'),
+  isLess(prop('length')(fn)),
+  (is) => apply(fn)(args)
+)(...args)
+
 const isNothing = (func) => func.isNothing();
 
 const debug = (fn) => (value) => {
@@ -234,24 +234,63 @@ const debug = (fn) => (value) => {
   return value;
 };
 
-
-
 const __stop = () => {
   throw new Error();
 };
 
-;// CONCATENATED MODULE: ./src/utils/boolean.js
+;// CONCATENATED MODULE: ./src/utils/object.js
 
 
-const flipBool = (bool) => !bool;
+const object_prop = (name) => (object) => Maybe_Maybe.of(object[name]);
 
-const boolean_not = (fn) => fp_flow(fn, toBool, flipBool);
+const merge = (objA) => (objB) => Object.assign({}, objA, objB);
 
-const or = (fnA, fnB) => (arg) => toBool(fnA(arg) || fnB(arg));
+const set = (name) => (value) => ({ [name]: value })
+;// CONCATENATED MODULE: ./src/utils/array.js
 
-const and = (fnA, fnB) => (arg) => toBool(fnA(arg) && fnB(arg));
 
-const toBool = (value) => Boolean(value);
+
+
+
+
+
+
+const array_first = object_prop(0);
+
+const last = (arr) => Maybe.of(arr[arr.length - 1]);
+
+const find = (fn) => (arr) => Maybe.of(arr.find(fn));
+
+const filter = (fn) => (arr) => arr.filter(fn);
+
+const pick = (fn) => (arr) => arr.filter(flow(fn, not));
+
+const toArray = (arg) => Array.from(arg);
+
+const reverse = (arr) => arr.reverse();
+
+const joinArr = (str) => (arr) => arr.join(str);
+
+const concat = (arrA) => (arrB) => [...arrA, ...arrB];
+
+const range = (from) => (to) => Array.from({length: to - from}, (_, index) => index + from)
+
+const isEmpty = fp_flow(object_prop('length'), map(eq(0)), value);
+
+const take = (amount) => (arr) => arr.slice(0, amount)
+
+const leave = (amount) => (arr) => arr.slice(amount)
+
+const chunk = (amount) => (arr) => fp_flow(
+  boolean_not(isEmpty),
+  (notEmpty) => notEmpty ? Right.of([take(amount)(arr)]) : left([]),
+  map(concat(
+    chunk(amount)(leave(amount)(arr))
+  )),
+  value
+)(arr)
+
+ //map_r(Identity.of(chunk(amount)(leave(amount)(arr)))),
 
 ;// CONCATENATED MODULE: external "jsdom"
 const external_jsdom_namespaceObject = require("jsdom");;
@@ -391,7 +430,7 @@ const toUrl = (str) => {
 
 const origin = fp_flow(
     toUrl,
-    chain(prop('origin'))
+    chain(object_prop('origin'))
 )
 ;// CONCATENATED MODULE: ./src/utils/index.js
 
@@ -411,8 +450,8 @@ const origin = fp_flow(
 
 
 const getDocument = fp_flow(
-  prop("window"),
-  chain(prop("document")
+  object_prop("window"),
+  chain(object_prop("document")
   )
 );
 
@@ -447,7 +486,7 @@ const getProductPageLinks = ({url, productSelector}) => getURL(url)
           toArray,
           filter(isAnchorToSubpage(url)),
           map(fp_flow(
-            prop("href"),
+            object_prop("href"),
             chain(fp_flow(
               startsWith('/'),
               either(
@@ -468,6 +507,7 @@ const getProductPageLinks = ({url, productSelector}) => getURL(url)
     )
   );
 
+console.log(chunk(1)([1,2,3,4,5,6,7]))
 
 const generatePageLink = ({ categories, separators, url }) => fp_flow(
     set('page'),
@@ -512,7 +552,7 @@ const pageConfig = {
 
 // IMPURE CALLING CODE
 
-program(merge(defaultConfig)(pageConfig)).forEach(run)
+program(merge(defaultConfig)(pageConfig)).forEach(unary(console.log))
 
 
 /******/ })()
