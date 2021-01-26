@@ -283,11 +283,9 @@ const leave = (amount) => (arr) => arr.slice(amount)
 
 const chunk = (amount) => (arr) => fp_flow(
   boolean_not(isEmpty),
-  (notEmpty) => notEmpty ? Right.of([take(amount)(arr)]) : left([]),
-  map(concat(
-    chunk(amount)(leave(amount)(arr))
-  )),
-  value
+  (notEmpty) => notEmpty 
+    ? [take(amount)(arr), ...chunk(amount)(leave(amount)(arr))]
+    : arr
 )(arr)
 
  //map_r(Identity.of(chunk(amount)(leave(amount)(arr)))),

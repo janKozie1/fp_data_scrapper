@@ -1,7 +1,7 @@
 import { Maybe } from "../Maybe";
 import { Right } from "../Either";
 
-import { flow, left, either, map_r, map, value, debug, id, ap_r, call, isNothing } from "./fp";
+import { flow, left, either, map_r, map, value, debug, id, ap_r, call, isNothing, ap } from "./fp";
 import { prop } from "./object";
 import { not, eq } from "./boolean";
 import { Identity } from "../Identity";
@@ -34,11 +34,9 @@ export const leave = (amount) => (arr) => arr.slice(amount)
 
 export const chunk = (amount) => (arr) => flow(
   not(isEmpty),
-  (notEmpty) => notEmpty ? Right.of([take(amount)(arr)]) : left([]),
-  map(concat(
-    chunk(amount)(leave(amount)(arr))
-  )),
-  value
+  (notEmpty) => notEmpty 
+    ? [take(amount)(arr), ...chunk(amount)(leave(amount)(arr))]
+    : arr
 )(arr)
 
  //map_r(Identity.of(chunk(amount)(leave(amount)(arr)))),
