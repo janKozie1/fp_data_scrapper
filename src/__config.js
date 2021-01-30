@@ -1,19 +1,17 @@
 
-export const defaultConfig = {
-  separators: {
-    category: '{{category}}',
-    page: '{{page}}',
-  },
-}
-
 
 export const morele = {
   selectors: {
     product: 'a.cat-product-image.productLink',
   },
-  url: "https://www.morele.net/kategoria/{{category}}/,,,,,,,,0,,,,/{{page}}/",
-  categories: ["mlynki-do-przypraw-515", "dyski-do-serwerow-147"],
-  pages: { from: 1, to: 2 },
+  url: {
+    base: "https://www.morele.net/kategoria/{{category}}/,,,,,,,,0,,,,/{{page}}/",
+    params: [
+      {category: "laptopy-31"},
+      {category: "lodowki-do-zabudowy-261"}
+    ]
+  },
+  pages: { from: 1, to: 1},
   data: [
     {
       id: 'image',
@@ -71,9 +69,15 @@ export const xkom = {
   selectors: {
     product: 'a[href^="/p/"]',
   },
-  url: "https://www.x-kom.pl/g-4/c/{{category}}.html?page={{page}}",
-  categories: ["1590-smartfony-i-telefony", '1663-tablety'],
-  pages: { from: 1, to: 1 },
+  url: {
+    base: "https://www.x-kom.pl/{{group}}/c/{{category}}.html?page={{page}}",
+    params: [
+      {category: "1590-smartfony-i-telefony", group: 'g-4'},
+      // {category: '1663-tablety', group: 'g-4'},
+      // {category: '89-dyski-twarde-hdd-i-ssd', group: 'g-5'},
+    ]
+  },
+  pages: { from: 1, to: 3},
   data: [
     {
       id: 'image',
@@ -94,6 +98,15 @@ export const xkom = {
       multiple: false,
     },
     {
+      id: 'discount',
+      parser: {
+        type: 'price',
+        args: { currency: 'zł'},
+      },
+      selector: '#app .cuTTER',
+      multiple: false
+    },
+    {
       id: 'name',
       parser: {
         type: 'text',
@@ -108,7 +121,7 @@ export const xkom = {
         type: 'text',
         args: { }
       },
-      selector: '#app a',
+      selector: '#app .iIoJeH',
       multiple: false,
     },
   ]

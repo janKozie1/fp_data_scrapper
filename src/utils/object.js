@@ -9,3 +9,5 @@ export const merge = curry((objA, objB) => Object.assign({}, objA, objB));
 export const set = (name) => (value) => ({ [name]: value })
 
 export const has = (name) => (obj) => name in obj
+
+export const pairs = (obj) => Object.entries(obj);

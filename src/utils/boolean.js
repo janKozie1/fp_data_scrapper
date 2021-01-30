@@ -14,4 +14,6 @@ export const eq = (a) => (b) => a === b;
 
 export const isLess = (a) => (b) => a < b;
 
+export const isNil = (a) => a === undefined || a === null;
+
 export const toBool = Boolean;

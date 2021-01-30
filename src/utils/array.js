@@ -2,7 +2,7 @@ import { Maybe } from "./functors/Maybe";
 
 import { flow, map, value } from "./fp";
 import { prop } from "./object";
-import { not, eq } from "./boolean";
+import { not, eq, isNil } from "./boolean";
 import { toSet } from "./set";
 
 export const first = prop(0);
@@ -12,6 +12,8 @@ export const last = (arr) => Maybe.of(arr[arr.length - 1]);
 export const find = (fn) => (arr) => Maybe.of(arr.find(fn));
 
 export const filter = (fn) => (arr) => arr.filter(fn);
+
+export const reduce = (fn, defaultArg) => (arr) => isNil(defaultArg) ? arr.reduce(fn) : arr.reduce(fn, defaultArg)
 
 export const pick = (fn) => (arr) => arr.filter(flow(fn, not));
 

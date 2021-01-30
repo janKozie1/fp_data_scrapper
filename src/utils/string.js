@@ -6,7 +6,7 @@ import { first, joinArr } from "./array";
 
 export const head = first;
 
-export const regex = (flags) => (str) => new RegExp(str, joinArr("")(flags));
+export const regex = curry((flags, str) => new RegExp(str, joinArr("")(flags)));
 
 export const toRegex = regex([]);
 

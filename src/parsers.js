@@ -17,11 +17,12 @@ export const imageURL = () => _.flow(
 export const price = ({currency = ''}) => _.flow(
   _.textContent,
   _.value,
-  _.match(_.regex(['i', 'g'])(`\\d+([,\\.]\\d*)?\\s*${currency}`)),
+  _.match(_.regex(['i', 'g'] ,`\\d[\\d\\s]*([,\\.]\\d*)?\\s*${currency}`)),
   _.chain(_.flow(
     _.head,
     _.map(_.flow(
       _.replace(',', '.'),
+      _.replace(_.regex(['g'], '\\s' ), ''),
       _.toFloat,
       _.ifElse(isNaN)(_.wrap(null), _.id)
     ))
@@ -39,7 +40,7 @@ export const text = ({replacements = []}) => _.flow(
         _.map(_.eq(2)),
         _.value,
       ))(
-        ([toReplace, replacement]) => _.replace(_.regex(['g', 'i'])(toReplace), replacement),
+        ([toReplace, replacement]) => _.replace(_.regex(['g', 'i'], toReplace), replacement),
         _.id
       )
     ))

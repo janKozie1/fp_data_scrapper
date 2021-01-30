@@ -39,14 +39,15 @@ const executeChunks = _.ifElse(_.isEmpty)(
       _.concat,
       async (concat) => concat(await executeChunks(_.leave(1)(chunks))))
     )
+    .catch(_.wrap([]))
 );
 
 (async(config) => {
-  const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 0}))
-  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 0})(_.join(linkChunks)))
+  const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 2}));
+  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 3})(_.join(linkChunks)))
 
   console.log(_.join(dataChunks))
-})(_.merge(configs.defaultConfig, _.merge(configs.xkom, { parsers })));
+})(_.merge(configs.defaultConfig, _.merge(configs.morele, { parsers })));
 
 
 

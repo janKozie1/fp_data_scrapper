@@ -56,33 +56,13 @@ __webpack_require__.d(parsers_namespaceObject, {
   "text": () => parsers_text
 });
 
-;// CONCATENATED MODULE: ./src/utils/functors/Identity.js
-class Identity {
-    constructor(x) {
-        this.__value = x;
-    }
+// NAMESPACE OBJECT: ./src/__config.js
+var _config_namespaceObject = {};
+__webpack_require__.r(_config_namespaceObject);
+__webpack_require__.d(_config_namespaceObject, {
+  "H": () => morele
+});
 
-    static of(x) {
-        return new Identity(x);
-    }
-
-    map(fn) {
-        return Identity.of(fn(this.__value));
-    }
-
-    ap(f) {
-        return f.map(this.__value);
-    }
-
-    chain(fn) {
-        return this.map(fn).join();
-    }
-
-    join() {
-        return this.__value;
-    }
-
-}
 ;// CONCATENATED MODULE: ./src/utils/functors/Either.js
 class Right {
   constructor(value) {
@@ -165,6 +145,8 @@ const eq = (a) => (b) => a === b;
 
 const isLess = (a) => (b) => a < b;
 
+const isNil = (a) => a === undefined || a === null;
+
 const toBool = Boolean;
 
 ;// CONCATENATED MODULE: ./src/utils/fp.js
@@ -226,10 +208,6 @@ const debug = (fn) => (value) => {
   return value;
 };
 
-const __stop = () => {
-  throw new Error();
-};
-
 ;// CONCATENATED MODULE: ./src/utils/functors/Maybe.js
 class Maybe_Maybe {
   constructor(value) {
@@ -273,6 +251,8 @@ const merge = curry((objA, objB) => Object.assign({}, objA, objB));
 const set = (name) => (value) => ({ [name]: value })
 
 const has = (name) => (obj) => name in obj
+
+const pairs = (obj) => Object.entries(obj);
 ;// CONCATENATED MODULE: ./src/utils/set.js
 
 
@@ -292,6 +272,8 @@ const last = (arr) => Maybe.of(arr[arr.length - 1]);
 const find = (fn) => (arr) => Maybe.of(arr.find(fn));
 
 const filter = (fn) => (arr) => arr.filter(fn);
+
+const reduce = (fn, defaultArg) => (arr) => isNil(defaultArg) ? arr.reduce(fn) : arr.reduce(fn, defaultArg)
 
 const pick = (fn) => (arr) => arr.filter(flow(fn, not));
 
@@ -332,7 +314,7 @@ const external_jsdom_namespaceObject = require("jsdom");;
 
 const head = first;
 
-const regex = (flags) => (str) => new RegExp(str, joinArr("")(flags));
+const regex = curry((flags, str) => new RegExp(str, joinArr("")(flags)));
 
 const toRegex = regex([]);
 
@@ -518,23 +500,11 @@ const toFloat = unary(parseFloat)
 
 
 
-
-const prepareUrl = (separators) => (values) => fp_flow(
-  replace(separators.category)(values.category),
-  replace(separators.page)(values.page)
-)
-
-
-const generatePageLink = ({ categories, separators, url }) => fp_flow(
-  set('page'),
-  merge,
-  map_r(categories.map(set('category'))),
-  map(fp_flow(
-    prepareUrl(separators),
-    map_r(Identity.of(url)),
-    value
-  ))
-);
+const generatePageLink = ({ url }) => (page) => url.params.map(fp_flow(
+  merge({page}),
+  pairs,
+  reduce(((link, [key, value]) => replace(`{{${key}}}`, value, link)), url.base)
+))
 
 /* harmony default export */ const src_generatePageLink = (generatePageLink);
 
@@ -621,11 +591,12 @@ const imageURL = () => fp_flow(
 const price = ({currency = ''}) => fp_flow(
   textContent,
   value,
-  match(regex(['i', 'g'])(`\\d+([,\\.]\\d*)?\\s*${currency}`)),
+  match(regex(['i', 'g'] ,`\\d[\\d\\s]*([,\\.]\\d*)?\\s*${currency}`)),
   chain(fp_flow(
     head,
     map(fp_flow(
       replace(',', '.'),
+      replace(regex(['g'], '\\s' ), ''),
       toFloat,
       ifElse(isNaN)(wrap(null), id)
     ))
@@ -643,7 +614,7 @@ const parsers_text = ({replacements = []}) => fp_flow(
         map(eq(2)),
         value,
       ))(
-        ([toReplace, replacement]) => replace(regex(['g', 'i'])(toReplace), replacement),
+        ([toReplace, replacement]) => replace(regex(['g', 'i'], toReplace), replacement),
         id
       )
     ))
@@ -657,21 +628,19 @@ const attribute = ({ attribute }) => fp_flow(
 )
 ;// CONCATENATED MODULE: ./src/__config.js
 
-const defaultConfig = {
-  separators: {
-    category: '{{category}}',
-    page: '{{page}}',
-  },
-}
-
 
 const morele = {
   selectors: {
     product: 'a.cat-product-image.productLink',
   },
-  url: "https://www.morele.net/kategoria/{{category}}/,,,,,,,,0,,,,/{{page}}/",
-  categories: ["mlynki-do-przypraw-515", "dyski-do-serwerow-147"],
-  pages: { from: 1, to: 2 },
+  url: {
+    base: "https://www.morele.net/kategoria/{{category}}/,,,,,,,,0,,,,/{{page}}/",
+    params: [
+      {category: "laptopy-31"},
+      {category: "lodowki-do-zabudowy-261"}
+    ]
+  },
+  pages: { from: 1, to: 1},
   data: [
     {
       id: 'image',
@@ -729,9 +698,15 @@ const xkom = {
   selectors: {
     product: 'a[href^="/p/"]',
   },
-  url: "https://www.x-kom.pl/g-4/c/{{category}}.html?page={{page}}",
-  categories: ["1590-smartfony-i-telefony", '1663-tablety'],
-  pages: { from: 1, to: 1 },
+  url: {
+    base: "https://www.x-kom.pl/{{group}}/c/{{category}}.html?page={{page}}",
+    params: [
+      {category: "1590-smartfony-i-telefony", group: 'g-4'},
+      // {category: '1663-tablety', group: 'g-4'},
+      // {category: '89-dyski-twarde-hdd-i-ssd', group: 'g-5'},
+    ]
+  },
+  pages: { from: 1, to: 3},
   data: [
     {
       id: 'image',
@@ -752,6 +727,15 @@ const xkom = {
       multiple: false,
     },
     {
+      id: 'discount',
+      parser: {
+        type: 'price',
+        args: { currency: 'zł'},
+      },
+      selector: '#app .cuTTER',
+      multiple: false
+    },
+    {
       id: 'name',
       parser: {
         type: 'text',
@@ -766,7 +750,7 @@ const xkom = {
         type: 'text',
         args: { }
       },
-      selector: '#app a',
+      selector: '#app .iIoJeH',
       multiple: false,
     },
   ]
@@ -813,14 +797,15 @@ const executeChunks = ifElse(isEmpty)(
       concat,
       async (concat) => concat(await executeChunks(leave(1)(chunks))))
     )
+    .catch(wrap([]))
 );
 
 (async(config) => {
-  const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 0}))
-  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 0})(join(linkChunks)))
+  const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 2}));
+  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 3})(join(linkChunks)))
 
   console.log(join(dataChunks))
-})(merge(defaultConfig, merge(xkom, { parsers: parsers_namespaceObject })));
+})(merge(_config_namespaceObject.defaultConfig, merge(morele, { parsers: parsers_namespaceObject })));
 
 
 

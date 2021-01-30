@@ -55,7 +55,3 @@ export const debug = (fn) => (value) => {
   console.log(fn(value));
   return value;
 };
-
-export const __stop = () => {
-  throw new Error();
-};
