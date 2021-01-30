@@ -33,9 +33,57 @@
 /******/ 		__webpack_require__.o = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop)
 /******/ 	})();
 /******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /************************************************************************/
 
-;// CONCATENATED MODULE: ./src/Either.js
+// NAMESPACE OBJECT: ./src/parsers.js
+var parsers_namespaceObject = {};
+__webpack_require__.r(parsers_namespaceObject);
+__webpack_require__.d(parsers_namespaceObject, {
+  "attribute": () => attribute,
+  "imageURL": () => imageURL,
+  "price": () => price,
+  "text": () => parsers_text
+});
+
+;// CONCATENATED MODULE: ./src/utils/functors/Identity.js
+class Identity {
+    constructor(x) {
+        this.__value = x;
+    }
+
+    static of(x) {
+        return new Identity(x);
+    }
+
+    map(fn) {
+        return Identity.of(fn(this.__value));
+    }
+
+    ap(f) {
+        return f.map(this.__value);
+    }
+
+    chain(fn) {
+        return this.map(fn).join();
+    }
+
+    join() {
+        return this.__value;
+    }
+
+}
+;// CONCATENATED MODULE: ./src/utils/functors/Either.js
 class Right {
   constructor(value) {
     this.__value = value;
@@ -100,34 +148,89 @@ class Left {
   }
 }
 
-;// CONCATENATED MODULE: ./src/Identity.js
-class Identity {
-    constructor(x) {
-        this.__value = x;
-    }
+;// CONCATENATED MODULE: ./src/utils/boolean.js
 
-    static of(x) {
-        return new Identity(x);
-    }
 
-    map(fn) {
-        return Identity.of(fn(this.__value));
-    }
+const flipBool = (bool) => !bool;
 
-    ap(f) {
-        return f.map(this.__value);
-    }
+const boolean_not = (fn) => fp_flow(fn, toBool, flipBool);
 
-    chain(fn) {
-        return this.map(fn).join();
-    }
+const or = (fnA, fnB) => (arg) => toBool(fnA(arg) || fnB(arg));
 
-    join() {
-        return this.__value;
-    }
+const and = (fnA, fnB) => (arg) => toBool(fnA(arg) && fnB(arg));
 
-}
-;// CONCATENATED MODULE: ./src/Maybe.js
+const ifElse = (condition) => (fnA, fnB) => (...arg) => condition(...arg) ? fnA(...arg) : fnB(...arg)
+
+const eq = (a) => (b) => a === b;
+
+const isLess = (a) => (b) => a < b;
+
+const toBool = Boolean;
+
+;// CONCATENATED MODULE: ./src/utils/fp.js
+
+
+
+const id = (value) => value;
+
+const fp_flow = (...fns) => (value) =>
+  fns.reduce((previous, fn) => fn(previous), value);
+
+const compose = (...fns) => fp_flow(fns.reverse());
+
+const left = (value) => new Left(value);
+
+const map = (fn) => (functor) => functor.map(fn);
+const map_r = (functor) => (fn) => functor.map(fn);
+
+const ap = (functorA) => (functorB) => functorA.ap(functorB)
+const ap_r = (functorA) => (functorB) => functorB.ap(functorA)
+
+const join = (monad) => Array.isArray(monad)
+  ? monad.flat()
+  : monad.join();
+
+const chain = (fn) => (monad) => Array.isArray(monad) 
+  ? monad.flatMap(fn)
+  : monad.chain(fn);
+
+const call = (...args) => (fn) => fn(...args)
+
+const isLeft = (either) => either.isLeft();
+
+const either = (right, left = id) => (either) =>
+  either.isLeft() ? left(either.__value) : right(either.__value);
+
+const wrap = (value) => () => value;
+
+const run = (task) => task.run()
+
+const value = (func) => func.__value;
+
+const unary = (fn) => (arg) => fn(arg);
+
+const bind = (...args) => (fn) => fn.bind(null, ...args)
+
+const noop = () => null;
+
+const curry = (fn) => (...args) => isLess(args.length)(fn.length)
+  ? curry(bind(...args)(fn))
+  : call(...args)(fn)
+
+const isNothing = (func) => func.isNothing();
+
+// IMPURE
+
+const debug = (fn) => (value) => {
+  console.log(fn(value));
+  return value;
+};
+
+const __stop = () => {
+  throw new Error();
+};
+
+;// CONCATENATED MODULE: ./src/utils/functors/Maybe.js
 class Maybe_Maybe {
   constructor(value) {
     this.__value = value;
@@ -158,94 +261,22 @@ class Maybe_Maybe {
   }
 }
 
-;// CONCATENATED MODULE: ./src/utils/boolean.js
-
-
-const flipBool = (bool) => !bool;
-
-const boolean_not = (fn) => fp_flow(fn, toBool, flipBool);
-
-const or = (fnA, fnB) => (arg) => toBool(fnA(arg) || fnB(arg));
-
-const and = (fnA, fnB) => (arg) => toBool(fnA(arg) && fnB(arg));
-
-const ifElse = (fnA, fnB) => (arg) => arg ? fnA() : fnB()
-
-const eq = (a) => (b) => a === b;
-
-const boolean_isLess = (a) => (b) => a < b;
-
-const toBool = Boolean;
-
-;// CONCATENATED MODULE: ./src/utils/fp.js
-
-
-
-
-
-const id = (value) => value;
-
-const fp_flow = (...fns) => (value) =>
-  fns.reduce((previous, fn) => fn(previous), value);
-
-const compose = (...fns) => fp_flow(fns.reverse());
-
-const left = (value) => new Left(value);
-
-const map = (fn) => (functor) => functor.map(fn);
-const map_r = (functor) => (fn) => functor.map(fn);
-
-const ap = (functorA) => (functorB) => functorA.ap(functorB)
-const ap_r = (functorA) => (functorB) => functorB.ap(functorA)
-
-const join = (monad) => monad.join();
-
-const chain = (fn) => (monad) => Array.isArray(monad) 
-  ? monad.flatMap(fn)
-  : monad.chain(fn);
-
-const call = (...args) => (fn) => fn(...args)
-
-const isLeft = (either) => either.isLeft();
-
-const either = (right, left = id) => (either) =>
-  either.isLeft() ? left(either.__value) : right(either.__value);
-
-const wrap = (value) => () => value;
-
-const run = (task) => task.run()
-
-const value = (func) => func.__value;
-
-const unary = (fn) => (arg) => fn(arg);
-
-const apply = (fn) => (args) => fn.apply(null, args)
-
-const curry = (fn) => (...args) => fp_flow(
-  prop('length'),
-  isLess(prop('length')(fn)),
-  (is) => apply(fn)(args)
-)(...args)
-
-const isNothing = (func) => func.isNothing();
-
-const debug = (fn) => (value) => {
-  console.log(fn(value));
-  return value;
-};
-
-const __stop = () => {
-  throw new Error();
-};
-
 ;// CONCATENATED MODULE: ./src/utils/object.js
 
 
-const object_prop = (name) => (object) => Maybe_Maybe.of(object[name]);
 
-const merge = (objA) => (objB) => Object.assign({}, objA, objB);
+
+const prop = (name) => (object) => Maybe_Maybe.of(object[name]);
+
+const merge = curry((objA, objB) => Object.assign({}, objA, objB));
 
 const set = (name) => (value) => ({ [name]: value })
+
+const has = (name) => (obj) => name in obj
+;// CONCATENATED MODULE: ./src/utils/set.js
+
+
+const toSet = (arr_like) => new Set(arr_like)
 ;// CONCATENATED MODULE: ./src/utils/array.js
 
 
@@ -254,8 +285,7 @@ const set = (name) => (value) => ({ [name]: value })
 
 
 
-
-const array_first = object_prop(0);
+const first = prop(0);
 
 const last = (arr) => Maybe.of(arr[arr.length - 1]);
 
@@ -273,47 +303,113 @@ const joinArr = (str) => (arr) => arr.join(str);
 
 const concat = (arrA) => (arrB) => [...arrA, ...arrB];
 
-const range = (from) => (to) => Array.from({length: to - from}, (_, index) => index + from)
+const range = (from) => (to) => Array.from({length: to - from + 1}, (_, index) => index + from)
 
-const isEmpty = fp_flow(object_prop('length'), map(eq(0)), value);
+const isEmpty = fp_flow(prop('length'), map(eq(0)), value);
 
 const take = (amount) => (arr) => arr.slice(0, amount)
 
 const leave = (amount) => (arr) => arr.slice(amount)
 
-const chunk = (amount) => (arr) => fp_flow(
-  boolean_not(isEmpty),
-  (notEmpty) => notEmpty 
+const unique = fp_flow(toSet, toArray)
+
+const chunk = (amount) => (arr) => amount === 0 
+  ? [arr]
+  : boolean_not(isEmpty)(arr) 
     ? [take(amount)(arr), ...chunk(amount)(leave(amount)(arr))]
     : arr
-)(arr)
 
  //map_r(Identity.of(chunk(amount)(leave(amount)(arr)))),
 
 ;// CONCATENATED MODULE: external "jsdom"
 const external_jsdom_namespaceObject = require("jsdom");;
+;// CONCATENATED MODULE: ./src/utils/string.js
+
+
+
+
+
+
+const head = first;
+
+const regex = (flags) => (str) => new RegExp(str, joinArr("")(flags));
+
+const toRegex = regex([]);
+
+const stringifty = (value) => JSON.stringify(value);
+
+const split = (splitter) => (str) => str.split(splitter);
+
+const match = (regex) => (str) => Maybe_Maybe.of(str.match(regex));
+
+const append = (suffix) => (str) => str + suffix;
+
+const prepend = (prefix) => (str) => prefix + str;
+
+const toLowerCase = (str) => str.toLowerCase();
+
+const replace = curry((regex, replacement, str) => str.replace(regex, replacement))
+
+const matches = (regex) => (str) =>
+  regex.test(str) ? Right.of(str) : left(str);
+
+const startsWith = (str) => matches(fp_flow(prepend("^"), toRegex)(str));
+
 ;// CONCATENATED MODULE: ./src/utils/dom/nodes.js
 
 
 
 
 
-const querySelectorAll = (selector) => (doc) =>
-  doc.querySelectorAll(selector);
 
-const querySelector = (selector) =>
-  flow(querySelectorAll(selector), first);
+
+
+const querySelectorAll = (selector) => (doc) => toArray(doc.querySelectorAll(selector));
+
+const querySelector = (selector) => fp_flow(
+  querySelectorAll(selector),
+  first,
+);
 
 const getAttribute = (atr) => (node) => Maybe_Maybe.of(node.getAttribute(atr));
+
+const nodeName = fp_flow(prop('tagName'), map(toLowerCase))
+
+const textContent = prop('textContent')
+;// CONCATENATED MODULE: ./src/utils/dom/links.js
+
+
+
+
+
+
+
+const isAnchorToSubpage = (root) => fp_flow(
+  getAttribute("href"),
+  map(
+    fp_flow(
+      startsWith(root), 
+      either(Right.of, startsWith("/")),
+      isLeft,
+    )
+  ),
+  value,
+  flipBool  
+);
 
 ;// CONCATENATED MODULE: ./src/utils/dom/index.js
 
 
 
 
+
+
+
+
 const domFromHTML = (html) => new external_jsdom_namespaceObject.JSDOM(html);
 
-;// CONCATENATED MODULE: ./src/Task.js
+const getDocument = fp_flow(prop("window"), chain(prop("document")));
+;// CONCATENATED MODULE: ./src/utils/functors/Task.js
 
 
 
@@ -382,36 +478,6 @@ const extractHTML = (response) => new Task((resolve, reject) =>
 )
 
 
-;// CONCATENATED MODULE: ./src/utils/string.js
-
-
-
-
-
-
-const head = (/* unused pure expression or super */ null && (first));
-
-const regex = (flags) => (str) => new RegExp(str, joinArr("")(flags));
-
-const toRegex = regex([]);
-
-const stringifty = (value) => JSON.stringify(value);
-
-const split = (splitter) => (str) => str.split(splitter);
-
-const match = (regex) => (str) => Maybe.of(str.match(regex));
-
-const append = (suffix) => (str) => str + suffix;
-
-const prepend = (prefix) => (str) => prefix + str;
-
-const replace = (regex) => (replacement) => (str) => str.replace(regex, replacement)
-
-const matches = (regex) => (str) =>
-  regex.test(str) ? Right.of(str) : left(str);
-
-const startsWith = (str) => matches(fp_flow(prepend("^"), toRegex)(str));
-
 ;// CONCATENATED MODULE: ./src/utils/url.js
 
 
@@ -428,8 +494,15 @@ const toUrl = (str) => {
 
 const origin = fp_flow(
     toUrl,
-    chain(object_prop('origin'))
+    chain(prop('origin'))
 )
+;// CONCATENATED MODULE: ./src/utils/number.js
+
+
+const toInt = unary(parseInt);
+
+const toFloat = unary(parseFloat)
+
 ;// CONCATENATED MODULE: ./src/utils/index.js
 
 
@@ -440,31 +513,11 @@ const origin = fp_flow(
 
 
 
-;// CONCATENATED MODULE: ./src/index.js
+
+;// CONCATENATED MODULE: ./src/generatePageLink.js
 
 
 
-
-
-
-const getDocument = fp_flow(
-  object_prop("window"),
-  chain(object_prop("document")
-  )
-);
-
-const isAnchorToSubpage = (root) => fp_flow(
-  getAttribute("href"),
-  map(
-    fp_flow(
-      startsWith(root), 
-      either(Right.of, startsWith("/")),
-      isLeft,
-    )
-  ),
-  value,
-  flipBool  
-);
 
 const prepareUrl = (separators) => (values) => fp_flow(
   replace(separators.category)(values.category),
@@ -472,85 +525,307 @@ const prepareUrl = (separators) => (values) => fp_flow(
 )
 
 
-const getProductPageLinks = ({url, productSelector}) => getURL(url)
-  .chain(extractHTML)
-  .map(
-    fp_flow(
-      domFromHTML,
-      getDocument,
-      chain(
-        fp_flow(
-          querySelectorAll(productSelector),
-          toArray,
-          filter(isAnchorToSubpage(url)),
-          map(fp_flow(
-            object_prop("href"),
-            chain(fp_flow(
-              startsWith('/'),
-              either(
-                fp_flow(
-                  append,
-                  Identity.of,
-                  ap_r(origin(url)),
-                ),
-                Maybe_Maybe.of
-              ),
-            ))
-          )),
-          filter(boolean_not(isNothing)),
-          map(value)
-        )
-      ),
-      debug(id)
-    )
-  );
-
-console.log(chunk(1)([1,2,3,4,5,6,7]))
-
 const generatePageLink = ({ categories, separators, url }) => fp_flow(
-    set('page'),
-    merge,
-    map_r(categories.map(set('category'))),
-    map(fp_flow(
-      prepareUrl(separators),
-      map_r(Identity.of(url)),
-      value
-    ))
-  );
+  set('page'),
+  merge,
+  map_r(categories.map(set('category'))),
+  map(fp_flow(
+    prepareUrl(separators),
+    map_r(Identity.of(url)),
+    value
+  ))
+);
 
-const program = (config) => range(config.pages.from)(config.pages.to)
-  .flatMap(generatePageLink(config))
+/* harmony default export */ const src_generatePageLink = (generatePageLink);
+
+;// CONCATENATED MODULE: ./src/getProductData.js
+
+
+const getProductData = ({url, data, parsers}) => getURL(url)
+  .chain(extractHTML)
   .map(fp_flow(
-    set('url'),
-    merge({productSelector: config.selectors.product}),
-    getProductPageLinks
+    domFromHTML,
+    getDocument,
+    chain((document) => (
+      data
+        .map((dataNode) => set(dataNode.id)(
+          fp_flow(
+            dataNode.multiple 
+              ? querySelectorAll(dataNode.selector)
+              : querySelector(dataNode.selector),
+            map(parsers[dataNode.parser.type](dataNode.parser.args) || noop),
+            dataNode.multiple 
+              ? id
+              : value
+          )(document)
+        ))
+        .concat([{url}])
+        .reduce(merge)
+    )),
   ))
 
+/* harmony default export */ const src_getProductData = (getProductData);
+;// CONCATENATED MODULE: ./src/getProductLinks.js
+
+
+
+
+const getProductLinks = ({url, productSelector}) => getURL(url)
+  .chain(extractHTML)
+  .map(fp_flow(
+    domFromHTML,
+    getDocument,
+    chain(fp_flow(
+      querySelectorAll(productSelector),
+      filter(isAnchorToSubpage(url)),
+      map(fp_flow(
+        prop("href"),
+        chain(fp_flow(
+          startsWith('/'),
+          either(
+            fp_flow(
+              append,
+              map_r(origin(url)),
+            ),
+            Maybe_Maybe.of
+          ),
+        ))
+      )),
+      filter(boolean_not(isNothing)),
+      map(fp_flow(
+        value,
+        replace(/#.*/)(''),
+      )),
+      unique,
+    )),
+  ));
+
+/* harmony default export */ const src_getProductLinks = (getProductLinks);
+;// CONCATENATED MODULE: ./src/parsers.js
+
+
+
+
+const imageURL = () => fp_flow(
+  ifElse(
+    fp_flow(
+      nodeName,
+      map(eq('img')),
+      value,
+    )
+  )(Maybe_Maybe.of, querySelector('img')),
+  chain(getAttribute('src')),
+  value
+)
+
+const price = ({currency = ''}) => fp_flow(
+  textContent,
+  value,
+  match(regex(['i', 'g'])(`\\d+([,\\.]\\d*)?\\s*${currency}`)),
+  chain(fp_flow(
+    head,
+    map(fp_flow(
+      replace(',', '.'),
+      toFloat,
+      ifElse(isNaN)(wrap(null), id)
+    ))
+  )),
+  value,
+)
+
+const parsers_text = ({replacements = []}) => fp_flow(
+  textContent,
+  map(fp_flow(
+    id,
+    ...replacements.map(fp_flow(
+      ifElse(fp_flow(
+        prop('length'), 
+        map(eq(2)),
+        value,
+      ))(
+        ([toReplace, replacement]) => replace(regex(['g', 'i'])(toReplace), replacement),
+        id
+      )
+    ))
+  )),
+  value,
+)
+
+const attribute = ({ attribute }) => fp_flow(
+  getAttribute(attribute),
+  value,
+)
+;// CONCATENATED MODULE: ./src/__config.js
 
 const defaultConfig = {
   separators: {
     category: '{{category}}',
     page: '{{page}}',
   },
-  selectors: {
-    product: undefined
-  },
-  categories: [],
-  baseUrl: undefined
 }
 
-const pageConfig = {
+
+const morele = {
   selectors: {
-    product: 'p > .productLink',
+    product: 'a.cat-product-image.productLink',
   },
-  url: "https://www.morele.net/{{category}}/,,,,,,,,0,,,,/{{page}}/",
-  categories: ['laptopy-31'],
-  pages: { from: 1, to: 10 },
+  url: "https://www.morele.net/kategoria/{{category}}/,,,,,,,,0,,,,/{{page}}/",
+  categories: ["mlynki-do-przypraw-515", "dyski-do-serwerow-147"],
+  pages: { from: 1, to: 2 },
+  data: [
+    {
+      id: 'image',
+      parser: {
+        type: 'imageURL',
+        args: { }
+      },
+      selector: '[itemprop=image]',
+      multiple: false,
+    },
+    {
+      id: 'price',
+      parser: { 
+        type: 'price',
+        args: { currency: 'zł' }
+      },
+      selector: '.product-price',
+      multiple: false,
+    },
+    {
+      id: 'name',
+      parser: {
+        type: 'text',
+        args: { }
+      },
+      selector: '.prod-name',
+      multiple: false,
+    },
+    {
+      id: 'features',
+      parser: {
+        type: 'text',
+        args: { 
+          replacements: [
+            ['\n', ''],
+          ]
+        },
+      },
+      selector: '.prod-main-features li:not([class])',
+      multiple: true,
+    },
+    {
+      id: 'id',
+      parser: {
+        type: 'text',
+        args: { }
+      },
+      selector: '[itemprop=sku]',
+      multiple: false,
+    }
+  ]
 };
+
+const xkom = {
+  selectors: {
+    product: 'a[href^="/p/"]',
+  },
+  url: "https://www.x-kom.pl/g-4/c/{{category}}.html?page={{page}}",
+  categories: ["1590-smartfony-i-telefony", '1663-tablety'],
+  pages: { from: 1, to: 1 },
+  data: [
+    {
+      id: 'image',
+      parser: {
+        type: 'imageURL',
+        args: { }
+      },
+      selector: '#app img[src$=jpg]',
+      multiple: false,
+    },
+    {
+      id: 'price',
+      parser: { 
+        type: 'price',
+        args: { currency: 'zł' }
+      },
+      selector: '#app div[order="3"] .iVazGO',
+      multiple: false,
+    },
+    {
+      id: 'name',
+      parser: {
+        type: 'text',
+        args: { }
+      },
+      selector: '#app h1',
+      multiple: false,
+    },
+    {
+      id: 'manufacturer',
+      parser: {
+        type: 'text',
+        args: { }
+      },
+      selector: '#app a',
+      multiple: false,
+    },
+  ]
+};
+;// CONCATENATED MODULE: ./src/index.js
+
+
+
+
+
+
+
+
+
+const getLinksTasks = ({config, chunkSize}) => fp_flow(
+  chain(src_generatePageLink(config)),
+  map(fp_flow(
+    set('url'),
+    merge({productSelector: config.selectors.product}),
+    src_getProductLinks
+  )),
+  chunk(chunkSize)
+)(range(config.pages.from)(config.pages.to))
+ 
+
+const getDataTasks = ({config, chunkSize}) => fp_flow(
+  join,
+  unique,
+  map(fp_flow(
+    set('url'),
+    merge(config),
+    src_getProductData,
+  )),
+  chunk(chunkSize),
+);
 
 // IMPURE CALLING CODE
 
-program(merge(defaultConfig)(pageConfig)).forEach(unary(console.log))
+const executeChunks = ifElse(isEmpty)(
+  wrap([]),
+  (chunks) => Promise.all(chunks[0].map(run))
+    .then(fp_flow(
+      (data) => [data], 
+      concat,
+      async (concat) => concat(await executeChunks(leave(1)(chunks))))
+    )
+);
+
+(async(config) => {
+  const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 0}))
+  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 0})(join(linkChunks)))
+
+  console.log(join(dataChunks))
+})(merge(defaultConfig, merge(xkom, { parsers: parsers_namespaceObject })));
+
+
+
+
+
 
 
 /******/ })()

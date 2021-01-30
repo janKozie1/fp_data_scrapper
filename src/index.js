@@ -1,152 +1,55 @@
-import { Right } from "./Either";
-import { Identity } from "./Identity";
-import { Maybe } from "./Maybe";
+import generatePageLink from './generatePageLink';
+import getProductData from './getProductData';
+import getProductLinks from './getProductLinks';
 
-import {
-  getURL,
-  extractHTML,
-  domFromHTML,
-  querySelectorAll,
-  debug,
-  flow,
-  id,
-  left,
-  prop,
-  map,
-  chain,
-  toArray,
-  filter,
-  contains,
-  getAttribute,
-  __stop,
-  matches,
-  value,
-  toBool,
-  either,
-  startsWith,
-  isLeft,
-  flipBool,
-  merge,
-  toUrl,
-  origin,
-  prepend,
-  append,
-  not,
-  isNothing,
-  ap,
-  ap_r,
-  set,
-  replace,
-  range,
-  map_r,
-  run,
-  unary,
-  chunk,
-  isEmpty
-} from "./utils";
+import * as parsers from './parsers';
+import * as _ from './utils';
 
-const getDocument = flow(
-  prop("window"),
-  chain(prop("document")
-  )
+import * as configs from './__config'
+
+const getLinksTasks = ({config, chunkSize}) => _.flow(
+  _.chain(generatePageLink(config)),
+  _.map(_.flow(
+    _.set('url'),
+    _.merge({productSelector: config.selectors.product}),
+    getProductLinks
+  )),
+  _.chunk(chunkSize)
+)(_.range(config.pages.from)(config.pages.to))
+ 
+
+const getDataTasks = ({config, chunkSize}) => _.flow(
+  _.join,
+  _.unique,
+  _.map(_.flow(
+    _.set('url'),
+    _.merge(config),
+    getProductData,
+  )),
+  _.chunk(chunkSize),
 );
-
-const isAnchorToSubpage = (root) => flow(
-  getAttribute("href"),
-  map(
-    flow(
-      startsWith(root), 
-      either(Right.of, startsWith("/")),
-      isLeft,
-    )
-  ),
-  value,
-  flipBool  
-);
-
-const prepareUrl = (separators) => (values) => flow(
-  replace(separators.category)(values.category),
-  replace(separators.page)(values.page)
-)
-
-
-const getProductPageLinks = ({url, productSelector}) => getURL(url)
-  .chain(extractHTML)
-  .map(
-    flow(
-      domFromHTML,
-      getDocument,
-      chain(
-        flow(
-          querySelectorAll(productSelector),
-          toArray,
-          filter(isAnchorToSubpage(url)),
-          map(flow(
-            prop("href"),
-            chain(flow(
-              startsWith('/'),
-              either(
-                flow(
-                  append,
-                  Identity.of,
-                  ap_r(origin(url)),
-                ),
-                Maybe.of
-              ),
-            ))
-          )),
-          filter(not(isNothing)),
-          map(value)
-        )
-      ),
-      debug(id)
-    )
-  );
-
-console.log(chunk(1)([1,2,3,4,5,6,7]))
-
-const generatePageLink = ({ categories, separators, url }) => flow(
-    set('page'),
-    merge,
-    map_r(categories.map(set('category'))),
-    map(flow(
-      prepareUrl(separators),
-      map_r(Identity.of(url)),
-      value
-    ))
-  );
-
-const program = (config) => range(config.pages.from)(config.pages.to)
-  .flatMap(generatePageLink(config))
-  .map(flow(
-    set('url'),
-    merge({productSelector: config.selectors.product}),
-    getProductPageLinks
-  ))
-
-
-const defaultConfig = {
-  separators: {
-    category: '{{category}}',
-    page: '{{page}}',
-  },
-  selectors: {
-    product: undefined
-  },
-  categories: [],
-  baseUrl: undefined
-}
-
-const pageConfig = {
-  selectors: {
-    product: 'p > .productLink',
-  },
-  url: "https://www.morele.net/{{category}}/,,,,,,,,0,,,,/{{page}}/",
-  categories: ['laptopy-31'],
-  pages: { from: 1, to: 10 },
-};
 
 // IMPURE CALLING CODE
 
-program(merge(defaultConfig)(pageConfig)).forEach(unary(console.log))
+const executeChunks = _.ifElse(_.isEmpty)(
+  _.wrap([]),
+  (chunks) => Promise.all(chunks[0].map(_.run))
+    .then(_.flow(
+      (data) => [data], 
+      _.concat,
+      async (concat) => concat(await executeChunks(_.leave(1)(chunks))))
+    )
+);
+
+(async(config) => {
+  const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 0}))
+  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 0})(_.join(linkChunks)))
+
+  console.log(_.join(dataChunks))
+})(_.merge(configs.defaultConfig, _.merge(configs.xkom, { parsers })));
+
+
+
+
+
 

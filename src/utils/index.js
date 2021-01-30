@@ -6,3 +6,5 @@ export * from './fp';
 export * from './object';
 export * from './string';
 export * from './url';
+export * from './set';
+export * from './number';

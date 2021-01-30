@@ -1,4 +1,4 @@
-import { Task } from '../Task';
+import { Task } from './functors/Task';
 import fetch from 'node-fetch';
 
 export const getURL = (url) => new Task((resolve, reject) => 

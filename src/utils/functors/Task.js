@@ -1,4 +1,4 @@
-import { id , flow } from './utils/fp';
+import { id , flow } from '../fp';
 
 
 export class Task {

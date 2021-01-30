@@ -1,4 +1,4 @@
-import { Maybe } from '../Maybe';
+import { Maybe } from './functors/Maybe';
 
 import { chain, flow } from './fp';
 import { prop } from './object'

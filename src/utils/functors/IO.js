@@ -1,4 +1,4 @@
-import { flow } from './utils/fp';
+import { flow } from '../fp';
 
 export class IO { 
   constructor(fn) {

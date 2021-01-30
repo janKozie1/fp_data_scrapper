@@ -1,7 +1,7 @@
-import { Maybe } from "../Maybe";
-import { Right } from "../Either";
+import { Maybe } from "./functors/Maybe";
+import { Right } from "./functors/Either";
 
-import { flow, left } from "./fp";
+import { flow, left, curry } from "./fp";
 import { first, joinArr } from "./array";
 
 export const head = first;
@@ -20,7 +20,9 @@ export const append = (suffix) => (str) => str + suffix;
 
 export const prepend = (prefix) => (str) => prefix + str;
 
-export const replace = (regex) => (replacement) => (str) => str.replace(regex, replacement)
+export const toLowerCase = (str) => str.toLowerCase();
+
+export const replace = curry((regex, replacement, str) => str.replace(regex, replacement))
 
 export const matches = (regex) => (str) =>
   regex.test(str) ? Right.of(str) : left(str);
