@@ -51,6 +51,7 @@ var parsers_namespaceObject = {};
 __webpack_require__.r(parsers_namespaceObject);
 __webpack_require__.d(parsers_namespaceObject, {
   "attribute": () => attribute,
+  "count": () => count,
   "imageURL": () => imageURL,
   "price": () => price,
   "text": () => parsers_text
@@ -223,7 +224,7 @@ class Maybe_Maybe {
   }
 
   map(fn) {
-    return this.isNothing() ? this : new Maybe_Maybe(fn(this.__value));
+    return this.isNothing() ? this : Maybe_Maybe.of(fn(this.__value));
   }
 
   ap(functor) {
@@ -301,7 +302,6 @@ const chunk = (amount) => (arr) => amount === 0
     ? [take(amount)(arr), ...chunk(amount)(leave(amount)(arr))]
     : arr
 
- //map_r(Identity.of(chunk(amount)(leave(amount)(arr)))),
 
 ;// CONCATENATED MODULE: external "jsdom"
 const external_jsdom_namespaceObject = require("jsdom");;
@@ -400,12 +400,8 @@ class Task {
     this.task = fn;
   }
 
-  // static rejected(x) {
-  //   return new Promise((reject, _) => reject(x));
-  // }
-
   static of(x) {
-    return new Task((resolve, reject) => resolve(x));
+    return new Task((resolve) => resolve(x));
   }
 
   run() {
@@ -423,22 +419,6 @@ class Task {
       .then((x) => fn(x).run().then(resolve, reject))     
     )
   }
-
-  // map(fn) {
-  //   return new Task((reject, resolve) =>(reject, compose(resolve, fn)));
-  // }
-
-  // ap(f) {
-  //   return this.chain(fn => f.map(fn));
-  // }
-
-  // chain(fn) {
-  //   return new Task((reject, resolve) => this.fork(reject, x => fn(x).fork(reject, resolve)));
-  // }
-
-  // join() {
-  //   return this.chain(id);
-  // }
 }
 ;// CONCATENATED MODULE: external "node-fetch"
 const external_node_fetch_namespaceObject = require("node-fetch");;
@@ -447,16 +427,17 @@ var external_node_fetch_default = /*#__PURE__*/__webpack_require__.n(external_no
 
 
 
-const getURL = (url) => new Task((resolve, reject) => 
+
+const getURL = (url) => new Task((resolve) => 
   external_node_fetch_default()(url, {method: 'GET', headers: { "Content-Type": 'text/plain'}})
     .then(resolve)
-    .catch(reject)
+    .catch(left)
 )
 
-const extractHTML = (response) => new Task((resolve, reject) =>
+const extractHTML = (response) => new Task((resolve) =>
   response.text()
     .then(resolve)
-    .catch(reject)
+    .catch(left)
 )
 
 
@@ -523,7 +504,9 @@ const getProductData = ({url, data, parsers}) => getURL(url)
             dataNode.multiple 
               ? querySelectorAll(dataNode.selector)
               : querySelector(dataNode.selector),
-            map(parsers[dataNode.parser.type](dataNode.parser.args) || noop),
+            map(has(dataNode.parser.type)(parsers) 
+              ? parsers[dataNode.parser.type](dataNode.parser.args)
+              : noop),
             dataNode.multiple 
               ? id
               : value
@@ -626,6 +609,12 @@ const attribute = ({ attribute }) => fp_flow(
   getAttribute(attribute),
   value,
 )
+
+const count = ({selector}) => fp_flow(
+  querySelectorAll(selector),
+  prop('length'),
+  value
+)
 ;// CONCATENATED MODULE: ./src/__config.js
 
 
@@ -706,7 +695,7 @@ const xkom = {
       // {category: '89-dyski-twarde-hdd-i-ssd', group: 'g-5'},
     ]
   },
-  pages: { from: 1, to: 3},
+  pages: { from: 1, to: 1},
   data: [
     {
       id: 'image',
@@ -715,6 +704,15 @@ const xkom = {
         args: { }
       },
       selector: '#app img[src$=jpg]',
+      multiple: false,
+    },
+    {
+      id: 'stars',
+      parser: {
+        type: 'count',
+        args: { selector: 'img[src$="985a91ae09e6b303.svg"]' }
+      },  
+      selector: 'a[href="#Opinie"]',
       multiple: false,
     },
     {
@@ -753,6 +751,19 @@ const xkom = {
       selector: '#app .iIoJeH',
       multiple: false,
     },
+    {
+      id: 'comments',
+      parser: {
+        type: 'text',
+        args: { 
+          replacements: [
+            ['.... Rozwiń dalej', '']
+          ]
+        }
+      },
+      selector: 'p.gjgIIq',
+      multiple: true,
+    }
   ]
 };
 ;// CONCATENATED MODULE: ./src/index.js
@@ -802,7 +813,7 @@ const executeChunks = ifElse(isEmpty)(
 
 (async(config) => {
   const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 2}));
-  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 3})(join(linkChunks)))
+  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 2})(join(linkChunks)))
 
   console.log(join(dataChunks))
 })(merge(_config_namespaceObject.defaultConfig, merge(morele, { parsers: parsers_namespaceObject })));

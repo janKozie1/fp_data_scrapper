@@ -77,7 +77,7 @@ export const xkom = {
       // {category: '89-dyski-twarde-hdd-i-ssd', group: 'g-5'},
     ]
   },
-  pages: { from: 1, to: 3},
+  pages: { from: 1, to: 1},
   data: [
     {
       id: 'image',
@@ -86,6 +86,15 @@ export const xkom = {
         args: { }
       },
       selector: '#app img[src$=jpg]',
+      multiple: false,
+    },
+    {
+      id: 'stars',
+      parser: {
+        type: 'count',
+        args: { selector: 'img[src$="985a91ae09e6b303.svg"]' }
+      },  
+      selector: 'a[href="#Opinie"]',
       multiple: false,
     },
     {
@@ -124,5 +133,18 @@ export const xkom = {
       selector: '#app .iIoJeH',
       multiple: false,
     },
+    {
+      id: 'comments',
+      parser: {
+        type: 'text',
+        args: { 
+          replacements: [
+            ['.... Rozwiń dalej', '']
+          ]
+        }
+      },
+      selector: 'p.gjgIIq',
+      multiple: true,
+    }
   ]
 };

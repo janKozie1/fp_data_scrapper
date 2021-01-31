@@ -44,7 +44,7 @@ const executeChunks = _.ifElse(_.isEmpty)(
 
 (async(config) => {
   const linkChunks = await executeChunks(getLinksTasks({config, chunkSize: 2}));
-  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 3})(_.join(linkChunks)))
+  const dataChunks = await executeChunks(getDataTasks({config, chunkSize: 2})(_.join(linkChunks)))
 
   console.log(_.join(dataChunks))
 })(_.merge(configs.defaultConfig, _.merge(configs.morele, { parsers })));

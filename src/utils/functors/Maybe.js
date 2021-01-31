@@ -12,7 +12,7 @@ export class Maybe {
   }
 
   map(fn) {
-    return this.isNothing() ? this : new Maybe(fn(this.__value));
+    return this.isNothing() ? this : Maybe.of(fn(this.__value));
   }
 
   ap(functor) {

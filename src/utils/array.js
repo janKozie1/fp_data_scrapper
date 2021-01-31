@@ -41,4 +41,3 @@ export const chunk = (amount) => (arr) => amount === 0
     ? [take(amount)(arr), ...chunk(amount)(leave(amount)(arr))]
     : arr
 
- //map_r(Identity.of(chunk(amount)(leave(amount)(arr)))),

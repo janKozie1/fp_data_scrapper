@@ -12,7 +12,9 @@ const getProductData = ({url, data, parsers}) => _.getURL(url)
             dataNode.multiple 
               ? _.querySelectorAll(dataNode.selector)
               : _.querySelector(dataNode.selector),
-            _.map(parsers[dataNode.parser.type](dataNode.parser.args) || _.noop),
+            _.map(_.has(dataNode.parser.type)(parsers) 
+              ? parsers[dataNode.parser.type](dataNode.parser.args)
+              : _.noop),
             dataNode.multiple 
               ? _.id
               : _.value

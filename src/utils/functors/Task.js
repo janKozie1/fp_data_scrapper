@@ -1,4 +1,4 @@
-import { id , flow } from '../fp';
+import { flow } from '../fp';
 
 
 export class Task {
@@ -6,12 +6,8 @@ export class Task {
     this.task = fn;
   }
 
-  // static rejected(x) {
-  //   return new Promise((reject, _) => reject(x));
-  // }
-
   static of(x) {
-    return new Task((resolve, reject) => resolve(x));
+    return new Task((resolve) => resolve(x));
   }
 
   run() {
@@ -29,20 +25,4 @@ export class Task {
       .then((x) => fn(x).run().then(resolve, reject))     
     )
   }
-
-  // map(fn) {
-  //   return new Task((reject, resolve) =>(reject, compose(resolve, fn)));
-  // }
-
-  // ap(f) {
-  //   return this.chain(fn => f.map(fn));
-  // }
-
-  // chain(fn) {
-  //   return new Task((reject, resolve) => this.fork(reject, x => fn(x).fork(reject, resolve)));
-  // }
-
-  // join() {
-  //   return this.chain(id);
-  // }
 }

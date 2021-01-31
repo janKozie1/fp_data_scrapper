@@ -52,3 +52,9 @@ export const attribute = ({ attribute }) => _.flow(
   _.getAttribute(attribute),
   _.value,
 )
+
+export const count = ({selector}) => _.flow(
+  _.querySelectorAll(selector),
+  _.prop('length'),
+  _.value
+)
